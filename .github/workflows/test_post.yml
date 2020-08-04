@@ -3,6 +3,7 @@ on:
   workflow_run:
     workflows: ["build-test"]
     types:
+      - requested
       - completed
 
 jobs:
