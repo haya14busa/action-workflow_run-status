@@ -1,0 +1,21 @@
+name: 'test_post'
+on:
+  workflow_run:
+    workflows: ["build-test"]
+    types:
+      - completed
+
+jobs:
+  post-test-success:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+      - run: exit 0
+
+  post-test-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+      - run: exit 1
