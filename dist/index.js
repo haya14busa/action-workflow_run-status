@@ -574,12 +574,35 @@ function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.warning('cleanup');
-            yield postStatus('success'); // TODO(haya14busa): use an appropriate status.
+            const token = core.getInput('github_token');
+            const octokit = github.getOctokit(token);
+            const context = github.context;
+            const resp = yield octokit.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId
+            });
+            yield postStatus(toConclusion(resp.data.conclusion));
         }
         catch (error) {
             core.warning(error.message);
         }
     });
+}
+function toConclusion(c) {
+    if (c === 'success') {
+        return 'success';
+    }
+    else if (c === 'pending') {
+        return 'pending';
+    }
+    else if (c === 'failure') {
+        return 'failure';
+    }
+    else {
+        core.error(`unkonwn conclusion: ${c}`);
+        return 'failure';
+    }
 }
 function postStatus(state) {
     return __awaiter(this, void 0, void 0, function* () {
