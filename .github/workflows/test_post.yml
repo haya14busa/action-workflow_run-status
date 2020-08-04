@@ -10,22 +10,22 @@ jobs:
   post-test-success:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./
       - uses: actions/checkout@v2
+      - uses: ./
       - run: exit 0
 
   post-test-failure:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./
       - uses: actions/checkout@v2
+      - uses: ./
       - run: exit 1
 
   post-test-continue-on-error:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./
       - uses: actions/checkout@v2
+      - uses: ./
       - run: exit 1
         continue-on-error: true
       - run: exit 0
