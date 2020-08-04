@@ -1,6 +1,10 @@
 name: 'workflow_run status'
 description: 'Associate workflow_run status with the base commit of workflow_run event'
 author: 'haya14busa'
+input:
+  github_token:
+    description: 'GITHUB_TOKEN'
+    default: '${{ github.token }}'
 runs:
   using: 'node12'
   main: 'dist/index.js'
