@@ -637,17 +637,23 @@ function postStatus(isCleanUp) {
         if (!job) {
             throw new Error(`job not found: ${context.job}`);
         }
+        const state = context.payload.action === 'requested' && requestedAsPending()
+            ? 'pending'
+            : job2status(job, isCleanUp);
         core.warning(JSON.stringify(job, null, 2));
         const resp = yield octokit.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
-            state: job2status(job, isCleanUp),
+            state,
             context: `${context.workflow} / ${context.job} (${context.eventName})`,
             target_url: job.html_url
         });
         core.warning(JSON.stringify(resp));
     });
+}
+function requestedAsPending() {
+    return ((core.getInput('requested_as_pending') || 'false').toUpperCase() === 'TRUE');
 }
 // Main
 if (!stateHelper.IsPost) {

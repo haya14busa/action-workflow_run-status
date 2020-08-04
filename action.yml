@@ -5,6 +5,9 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN'
     default: '${{ github.token }}'
+  requested_as_pending:
+    description: 'handle requested action type as pending'
+    default: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
