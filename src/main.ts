@@ -7,7 +7,6 @@ type Status = 'failure' | 'pending' | 'success'
 
 async function run(): Promise<void> {
   try {
-    core.warning('main')
     await postStatus(false)
   } catch (error) {
     core.setFailed(error.message)
@@ -16,23 +15,9 @@ async function run(): Promise<void> {
 
 async function cleanup(): Promise<void> {
   try {
-    core.warning('cleanup')
     await postStatus(true)
   } catch (error) {
     core.warning(error.message)
-  }
-}
-
-function toStatus(c: string): Status {
-  if (c === 'success') {
-    return 'success'
-  } else if (c === 'pending' || c === null) {
-    return 'pending'
-  } else if (c === 'failure') {
-    return 'failure'
-  } else {
-    core.error(`unkonwn conclusion: ${c}`)
-    return 'failure'
   }
 }
 
@@ -64,13 +49,10 @@ function job2status(
   if (!isCleanUp) {
     return 'pending'
   }
-  core.warning(`job.conclusion?: ${job.conclusion}`)
-  if (job.conclusion) {
-    return toStatus(job.conclusion)
-  }
-  core.warning(`failed step?`)
+  // Find step with failure instead of relying on job.conclusion because this
+  // (post) action itself is one of a step of this job and job.conclusion is
+  // always null while running this action.
   const failedStep = job.steps.find(step => step.conclusion === 'failure')
-  core.warning(JSON.stringify(failedStep, null, 2))
   if (failedStep) {
     return 'failure'
   }
@@ -79,7 +61,6 @@ function job2status(
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
   const context = github.context
-  core.warning(JSON.stringify(context, null, 2))
   if (context.eventName !== 'workflow_run') {
     throw new Error(
       `This is not workflow_run event: eventName=${context.eventName}`
@@ -106,7 +87,6 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     context.payload.action === 'requested' && requestedAsPending()
       ? 'pending'
       : job2status(job, isCleanUp)
-  core.warning(JSON.stringify(job, null, 2))
   const resp = await octokit.repos.createCommitStatus({
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -115,7 +95,7 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     context: `${context.workflow} / ${context.job} (${context.eventName})`,
     target_url: job.html_url
   })
-  core.warning(JSON.stringify(resp))
+  core.debug(JSON.stringify(resp, null, 2))
 }
 
 function requestedAsPending(): boolean {
