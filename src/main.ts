@@ -69,8 +69,10 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
   const token = core.getInput('github_token')
   const octokit = github.getOctokit(token)
   if (isCleanUp) {
-    core.warning('Waiting 5 secs...')
-    await wait(5 * 1000)
+    core.info(
+      'Waiting 10 secs to wait for other steps job completion are propagated to GitHub API response.'
+    )
+    await wait(10 * 1000)
   }
   const jobs = await octokit.actions.listJobsForWorkflowRun({
     owner: context.repo.owner,

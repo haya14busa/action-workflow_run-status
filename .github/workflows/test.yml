@@ -15,4 +15,7 @@ jobs:
           npm install
       - run: |
           npm run all
-      - run: echo 'check diff?'
+      - uses: reviewdog/action-suggester@master
+        with:
+          cleanup: false
+      - run: git diff --exit-code
