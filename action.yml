@@ -1,5 +1,5 @@
 name: 'workflow_run status'
-description: 'Associate workflow_run status with the base commit of workflow_run event'
+description: 'Associate workflow_run status with the base commit of workflow_run triggered event'
 author: 'haya14busa'
 inputs:
   github_token:

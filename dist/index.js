@@ -624,7 +624,7 @@ function postStatus(isCleanUp) {
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
             state,
-            context: `${context.workflow} / ${context.job} (${context.eventName})`,
+            context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event}->${context.eventName})`,
             target_url: job.html_url
         });
         core.debug(JSON.stringify(resp, null, 2));
