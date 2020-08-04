@@ -61,17 +61,17 @@ function job2status(
   },
   isCleanUp: boolean
 ): Status {
-  if (job.conclusion) {
-    return toStatus(job.conclusion)
-  }
   if (!isCleanUp) {
     return 'pending'
   }
-  if (
-    job.steps.find(step => {
-      step.conclusion === 'failure'
-    })
-  ) {
+  if (job.conclusion) {
+    return toStatus(job.conclusion)
+  }
+  const failedStep = job.steps.find(step => {
+    step.conclusion === 'failure'
+  })
+  core.warning(JSON.stringify(failedStep, null, 2))
+  if (failedStep) {
     return 'failure'
   }
   return 'success'
@@ -107,7 +107,6 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     owner: context.repo.owner,
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
-    // state: toStatus(job.conclusion),
     state: job2status(job, isCleanUp),
     context: `${context.workflow} / ${context.job} (${context.eventName})`,
     target_url: job.html_url
