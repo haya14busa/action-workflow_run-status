@@ -22,7 +22,6 @@ on:
   workflow_run:
     workflows: ["test"]
     types:
-      - requested
       - completed
 
 jobs:
