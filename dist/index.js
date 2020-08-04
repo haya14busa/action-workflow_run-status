@@ -595,7 +595,7 @@ function postStatus(state) {
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
             state,
-            context: `workflow_run:${context.workflow}`,
+            context: `workflow_run:${context.workflow}/${context.job}`,
             target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/runs/${context.runId}`
         });
         core.warning(JSON.stringify(resp));
