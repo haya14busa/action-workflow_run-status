@@ -563,7 +563,6 @@ const wait_1 = __webpack_require__(494);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.warning('main');
             yield postStatus(false);
         }
         catch (error) {
@@ -574,7 +573,6 @@ function run() {
 function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.warning('cleanup');
             yield postStatus(true);
         }
         catch (error) {
@@ -582,32 +580,14 @@ function cleanup() {
         }
     });
 }
-function toStatus(c) {
-    if (c === 'success') {
-        return 'success';
-    }
-    else if (c === 'pending' || c === null) {
-        return 'pending';
-    }
-    else if (c === 'failure') {
-        return 'failure';
-    }
-    else {
-        core.error(`unkonwn conclusion: ${c}`);
-        return 'failure';
-    }
-}
 function job2status(job, isCleanUp) {
     if (!isCleanUp) {
         return 'pending';
     }
-    core.warning(`job.conclusion?: ${job.conclusion}`);
-    if (job.conclusion) {
-        return toStatus(job.conclusion);
-    }
-    core.warning(`failed step?`);
+    // Find step with failure instead of relying on job.conclusion because this
+    // (post) action itself is one of a step of this job and job.conclusion is
+    // always null while running this action.
     const failedStep = job.steps.find(step => step.conclusion === 'failure');
-    core.warning(JSON.stringify(failedStep, null, 2));
     if (failedStep) {
         return 'failure';
     }
@@ -616,7 +596,6 @@ function job2status(job, isCleanUp) {
 function postStatus(isCleanUp) {
     return __awaiter(this, void 0, void 0, function* () {
         const context = github.context;
-        core.warning(JSON.stringify(context, null, 2));
         if (context.eventName !== 'workflow_run') {
             throw new Error(`This is not workflow_run event: eventName=${context.eventName}`);
         }
@@ -640,7 +619,6 @@ function postStatus(isCleanUp) {
         const state = context.payload.action === 'requested' && requestedAsPending()
             ? 'pending'
             : job2status(job, isCleanUp);
-        core.warning(JSON.stringify(job, null, 2));
         const resp = yield octokit.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -649,7 +627,7 @@ function postStatus(isCleanUp) {
             context: `${context.workflow} / ${context.job} (${context.eventName})`,
             target_url: job.html_url
         });
-        core.warning(JSON.stringify(resp));
+        core.debug(JSON.stringify(resp, null, 2));
     });
 }
 function requestedAsPending() {
