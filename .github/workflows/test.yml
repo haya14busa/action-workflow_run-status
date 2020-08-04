@@ -15,4 +15,5 @@ jobs:
           npm install
       - run: |
           npm run all
+      - uses: reviewdog/action-suggester@master
       - run: echo 'check diff?'
