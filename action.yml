@@ -1,11 +1,8 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'workflow_run status'
+description: 'Associate workflow_run status with the base commit of workflow_run event'
+author: 'haya14busa'
 inputs:
-  milliseconds: # change this
-    required: true
-    description: 'input description here'
-    default: 'default value if applicable'
 runs:
   using: 'node12'
   main: 'dist/index.js'
+  post: 'dist/index.js'

@@ -1,19 +1,27 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import * as stateHelper from './state-helper'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
+    core.warning('main')
   } catch (error) {
     core.setFailed(error.message)
   }
 }
 
-run()
+async function cleanup(): Promise<void> {
+  try {
+    core.warning('cleanup')
+  } catch (error) {
+    core.warning(error.message)
+  }
+}
+
+// Main
+if (!stateHelper.IsPost) {
+  run()
+}
+// Post
+else {
+  cleanup()
+}
