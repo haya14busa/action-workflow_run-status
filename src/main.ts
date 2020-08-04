@@ -64,12 +64,12 @@ function job2status(
   if (!isCleanUp) {
     return 'pending'
   }
+  core.warning(`job.conclusion?: ${job.conclusion}`)
   if (job.conclusion) {
     return toStatus(job.conclusion)
   }
-  const failedStep = job.steps.find(step => {
-    step.conclusion === 'failure'
-  })
+  core.warning(`failed step?`)
+  const failedStep = job.steps.find(step => step.conclusion === 'failure')
   core.warning(JSON.stringify(failedStep, null, 2))
   if (failedStep) {
     return 'failure'
