@@ -563,7 +563,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.warning('main');
-            yield postStatus('pending');
+            yield postStatus();
         }
         catch (error) {
             core.setFailed(error.message);
@@ -583,14 +583,14 @@ function cleanup() {
                 run_id: context.runId
             });
             core.warning(JSON.stringify(resp, null, 2));
-            yield postStatus(toConclusion(resp.data.conclusion));
+            yield postStatus();
         }
         catch (error) {
             core.warning(error.message);
         }
     });
 }
-function toConclusion(c) {
+function toStatus(c) {
     if (c === 'success') {
         return 'success';
     }
@@ -605,7 +605,7 @@ function toConclusion(c) {
         return 'failure';
     }
 }
-function postStatus(state) {
+function postStatus() {
     return __awaiter(this, void 0, void 0, function* () {
         const context = github.context;
         core.warning(JSON.stringify(context, null, 2));
@@ -614,13 +614,25 @@ function postStatus(state) {
         }
         const token = core.getInput('github_token');
         const octokit = github.getOctokit(token);
+        const jobs = yield octokit.actions.listJobsForWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+            filter: 'latest',
+            per_page: 100
+        });
+        core.warning(JSON.stringify(jobs, null, 2));
+        const job = jobs.data.jobs.find(j => j.name === context.job);
+        if (!job) {
+            throw new Error(`job not found: ${context.job}`);
+        }
         const resp = yield octokit.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
-            state,
-            context: `workflow_run:${context.workflow}/${context.job}`,
-            target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/runs/${context.runId}`
+            state: toStatus(job.conclusion),
+            context: `${context.workflow} / ${context.job} (${context.eventName})`,
+            target_url: job.html_url
         });
         core.warning(JSON.stringify(resp));
     });
