@@ -563,6 +563,7 @@ const wait_1 = __webpack_require__(494);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            core.warning('main');
             yield postStatus(false);
         }
         catch (error) {
@@ -573,6 +574,7 @@ function run() {
 function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            core.warning('cleanup');
             yield postStatus(true);
         }
         catch (error) {
@@ -595,24 +597,37 @@ function toStatus(c) {
         return 'failure';
     }
 }
+function job2status(job, isCleanUp) {
+    if (job.conclusion) {
+        return toStatus(job.conclusion);
+    }
+    if (!isCleanUp) {
+        return 'pending';
+    }
+    if (job.steps.find(step => { step.conclusion === 'failure'; })) {
+        return 'failure';
+    }
+    return 'success';
+}
 function postStatus(isCleanUp) {
     return __awaiter(this, void 0, void 0, function* () {
         const context = github.context;
+        core.warning(JSON.stringify(context, null, 2));
         if (context.eventName !== 'workflow_run') {
             throw new Error(`This is not workflow_run event: eventName=${context.eventName}`);
         }
         const token = core.getInput('github_token');
         const octokit = github.getOctokit(token);
         if (isCleanUp) {
-            core.warning('Waiting 60 secs...');
-            yield wait_1.wait(60 * 1000);
+            core.warning('Waiting 5 secs...');
+            yield wait_1.wait(5 * 1000);
         }
         const jobs = yield octokit.actions.listJobsForWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
             run_id: context.runId,
             filter: 'latest',
-            per_page: 100,
+            per_page: 100
         });
         const job = jobs.data.jobs.find(j => j.name === context.job);
         if (!job) {
@@ -623,7 +638,8 @@ function postStatus(isCleanUp) {
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
-            state: toStatus(job.conclusion),
+            // state: toStatus(job.conclusion),
+            state: job2status(job, isCleanUp),
             context: `${context.workflow} / ${context.job} (${context.eventName})`,
             target_url: job.html_url
         });

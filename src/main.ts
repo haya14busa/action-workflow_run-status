@@ -36,6 +36,47 @@ function toStatus(c: string): Status {
   }
 }
 
+function job2status(
+  job: {
+    id: number
+    run_id: number
+    node_id: string
+    head_sha: string
+    url: string
+    html_url: string
+    status: string
+    conclusion: string
+    started_at: string
+    completed_at: string
+    name: string
+    steps: {
+      name: string
+      status: string
+      conclusion: string
+      number: number
+      started_at: string
+      completed_at: string
+    }[]
+    check_run_url: string
+  },
+  isCleanUp: boolean
+): Status {
+  if (job.conclusion) {
+    return toStatus(job.conclusion)
+  }
+  if (!isCleanUp) {
+    return 'pending'
+  }
+  if (
+    job.steps.find(step => {
+      step.conclusion === 'failure'
+    })
+  ) {
+    return 'failure'
+  }
+  return 'success'
+}
+
 async function postStatus(isCleanUp: boolean): Promise<void> {
   const context = github.context
   core.warning(JSON.stringify(context, null, 2))
@@ -47,8 +88,8 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
   const token = core.getInput('github_token')
   const octokit = github.getOctokit(token)
   if (isCleanUp) {
-    core.warning('Waiting 60 secs...')
-    await wait(60 * 1000)
+    core.warning('Waiting 5 secs...')
+    await wait(5 * 1000)
   }
   const jobs = await octokit.actions.listJobsForWorkflowRun({
     owner: context.repo.owner,
@@ -66,7 +107,8 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     owner: context.repo.owner,
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
-    state: toStatus(job.conclusion),
+    // state: toStatus(job.conclusion),
+    state: job2status(job, isCleanUp),
     context: `${context.workflow} / ${context.job} (${context.eventName})`,
     target_url: job.html_url
   })
