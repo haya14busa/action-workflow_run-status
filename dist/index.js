@@ -559,11 +559,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const stateHelper = __importStar(__webpack_require__(153));
+const wait_1 = __webpack_require__(494);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.warning('main');
-            yield postStatus();
+            yield postStatus(false);
         }
         catch (error) {
             core.setFailed(error.message);
@@ -573,17 +573,7 @@ function run() {
 function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.warning('cleanup');
-            const token = core.getInput('github_token');
-            const octokit = github.getOctokit(token);
-            const context = github.context;
-            const resp = yield octokit.actions.getWorkflowRun({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: context.runId
-            });
-            core.warning(JSON.stringify(resp, null, 2));
-            yield postStatus();
+            yield postStatus(true);
         }
         catch (error) {
             core.warning(error.message);
@@ -594,7 +584,7 @@ function toStatus(c) {
     if (c === 'success') {
         return 'success';
     }
-    else if (c === 'pending') {
+    else if (c === 'pending' || c === null) {
         return 'pending';
     }
     else if (c === 'failure') {
@@ -605,27 +595,30 @@ function toStatus(c) {
         return 'failure';
     }
 }
-function postStatus() {
+function postStatus(isCleanUp) {
     return __awaiter(this, void 0, void 0, function* () {
         const context = github.context;
-        core.warning(JSON.stringify(context, null, 2));
         if (context.eventName !== 'workflow_run') {
             throw new Error(`This is not workflow_run event: eventName=${context.eventName}`);
         }
         const token = core.getInput('github_token');
         const octokit = github.getOctokit(token);
+        if (isCleanUp) {
+            core.warning('Waiting 60 secs...');
+            yield wait_1.wait(60 * 1000);
+        }
         const jobs = yield octokit.actions.listJobsForWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
             run_id: context.runId,
             filter: 'latest',
-            per_page: 100
+            per_page: 100,
         });
-        core.warning(JSON.stringify(jobs, null, 2));
         const job = jobs.data.jobs.find(j => j.name === context.job);
         if (!job) {
             throw new Error(`job not found: ${context.job}`);
         }
+        core.warning(JSON.stringify(job, null, 2));
         const resp = yield octokit.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -3553,6 +3546,37 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 494:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.wait = void 0;
+function wait(milliseconds) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise(resolve => {
+            if (isNaN(milliseconds)) {
+                throw new Error('milliseconds not a number');
+            }
+            setTimeout(() => resolve('done!'), milliseconds);
+        });
+    });
+}
+exports.wait = wait;
+
 
 /***/ }),
 

@@ -1,13 +1,14 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import * as stateHelper from './state-helper'
+import {wait} from './wait'
 
 type Status = 'failure' | 'pending' | 'success'
 
 async function run(): Promise<void> {
   try {
     core.warning('main')
-    await postStatus()
+    await postStatus(false)
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -16,16 +17,7 @@ async function run(): Promise<void> {
 async function cleanup(): Promise<void> {
   try {
     core.warning('cleanup')
-    const token = core.getInput('github_token')
-    const octokit = github.getOctokit(token)
-    const context = github.context
-    const resp = await octokit.actions.getWorkflowRun({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      run_id: context.runId
-    })
-    core.warning(JSON.stringify(resp, null, 2))
-    await postStatus()
+    await postStatus(true)
   } catch (error) {
     core.warning(error.message)
   }
@@ -34,7 +26,7 @@ async function cleanup(): Promise<void> {
 function toStatus(c: string): Status {
   if (c === 'success') {
     return 'success'
-  } else if (c === 'pending') {
+  } else if (c === 'pending' || c === null) {
     return 'pending'
   } else if (c === 'failure') {
     return 'failure'
@@ -44,7 +36,7 @@ function toStatus(c: string): Status {
   }
 }
 
-async function postStatus(): Promise<void> {
+async function postStatus(isCleanUp: boolean): Promise<void> {
   const context = github.context
   core.warning(JSON.stringify(context, null, 2))
   if (context.eventName !== 'workflow_run') {
@@ -54,6 +46,10 @@ async function postStatus(): Promise<void> {
   }
   const token = core.getInput('github_token')
   const octokit = github.getOctokit(token)
+  if (isCleanUp) {
+    core.warning('Waiting 60 secs...')
+    await wait(60 * 1000)
+  }
   const jobs = await octokit.actions.listJobsForWorkflowRun({
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -61,11 +57,11 @@ async function postStatus(): Promise<void> {
     filter: 'latest',
     per_page: 100
   })
-  core.warning(JSON.stringify(jobs, null, 2))
   const job = jobs.data.jobs.find(j => j.name === context.job)
   if (!job) {
     throw new Error(`job not found: ${context.job}`)
   }
+  core.warning(JSON.stringify(job, null, 2))
   const resp = await octokit.repos.createCommitStatus({
     owner: context.repo.owner,
     repo: context.repo.repo,
