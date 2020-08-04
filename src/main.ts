@@ -7,7 +7,6 @@ type Status = 'failure' | 'pending' | 'success'
 
 async function run(): Promise<void> {
   try {
-    core.warning('main')
     await postStatus(false)
   } catch (error) {
     core.setFailed(error.message)
@@ -16,7 +15,6 @@ async function run(): Promise<void> {
 
 async function cleanup(): Promise<void> {
   try {
-    core.warning('cleanup')
     await postStatus(true)
   } catch (error) {
     core.warning(error.message)
@@ -79,7 +77,6 @@ function job2status(
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
   const context = github.context
-  core.warning(JSON.stringify(context, null, 2))
   if (context.eventName !== 'workflow_run') {
     throw new Error(
       `This is not workflow_run event: eventName=${context.eventName}`
