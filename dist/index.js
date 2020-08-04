@@ -562,18 +562,8 @@ const stateHelper = __importStar(__webpack_require__(153));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // const token = core.getInput('github_token');
-            // const octokit = github.getOctokit(token);
-            const context = github.context;
-            core.warning(JSON.stringify(context, null, 2));
-            // octokit.status
-            // octokit.repos.createCommitStatus({
-            //   owner,
-            //   repo,
-            //   sha,
-            //   state,
-            // });
             core.warning('main');
+            postStatus('pending');
         }
         catch (error) {
             core.setFailed(error.message);
@@ -584,10 +574,31 @@ function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.warning('cleanup');
+            postStatus('success'); // TODO(haya14busa): use an appropriate status.
         }
         catch (error) {
             core.warning(error.message);
         }
+    });
+}
+function postStatus(state) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const context = github.context;
+        core.warning(JSON.stringify(context, null, 2));
+        if (context.eventName !== 'workflow_run') {
+            throw new Error(`This is not workflow_run event: eventName=${context.eventName}`);
+        }
+        const token = core.getInput('github_token');
+        const octokit = github.getOctokit(token);
+        const resp = yield octokit.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: context.payload.workflow_run.head_commit.id,
+            state,
+            context: `workflow_run:${context.workflow}`,
+            target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/runs/${context.runId}`
+        });
+        core.warning(JSON.stringify(resp));
     });
 }
 // Main
