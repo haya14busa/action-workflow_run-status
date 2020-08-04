@@ -563,7 +563,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.warning('main');
-            postStatus('pending');
+            yield postStatus('pending');
         }
         catch (error) {
             core.setFailed(error.message);
@@ -574,7 +574,7 @@ function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.warning('cleanup');
-            postStatus('success'); // TODO(haya14busa): use an appropriate status.
+            yield postStatus('success'); // TODO(haya14busa): use an appropriate status.
         }
         catch (error) {
             core.warning(error.message);

@@ -5,7 +5,7 @@ import * as stateHelper from './state-helper'
 async function run(): Promise<void> {
   try {
     core.warning('main')
-    postStatus('pending')
+    await postStatus('pending')
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -14,7 +14,7 @@ async function run(): Promise<void> {
 async function cleanup(): Promise<void> {
   try {
     core.warning('cleanup')
-    postStatus('success') // TODO(haya14busa): use an appropriate status.
+    await postStatus('success') // TODO(haya14busa): use an appropriate status.
   } catch (error) {
     core.warning(error.message)
   }
