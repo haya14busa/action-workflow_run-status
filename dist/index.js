@@ -582,6 +582,7 @@ function cleanup() {
                 repo: context.repo.repo,
                 run_id: context.runId
             });
+            core.warning(JSON.stringify(resp, null, 2));
             yield postStatus(toConclusion(resp.data.conclusion));
         }
         catch (error) {

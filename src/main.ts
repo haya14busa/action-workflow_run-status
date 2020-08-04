@@ -24,6 +24,7 @@ async function cleanup(): Promise<void> {
       repo: context.repo.repo,
       run_id: context.runId
     })
+    core.warning(JSON.stringify(resp, null, 2))
     await postStatus(toConclusion(resp.data.conclusion))
   } catch (error) {
     core.warning(error.message)
