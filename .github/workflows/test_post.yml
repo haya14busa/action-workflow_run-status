@@ -7,6 +7,17 @@ on:
       - completed
 
 jobs:
+  post-test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test: [hello, world]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+      - run: exit 0
+
   post-test-success:
     runs-on: ubuntu-latest
     steps:
