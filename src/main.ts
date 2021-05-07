@@ -59,6 +59,20 @@ function job2status(
   return 'success'
 }
 
+function jobName(job: string) {
+  if (
+    process.env.MATRIX_CONTEXT == null ||
+    process.env.MATRIX_CONTEXT === 'null'
+  )
+    return job;
+  const matrix = JSON.parse(process.env.MATRIX_CONTEXT);
+  const value = Object.values(matrix).join(', ');
+  const value2 = value !== '' ? `${job} (${value})` : job;
+  if (value2.length <= 100)
+    return value2;
+  return value2.substring(0, 97) + '...';
+}
+
 async function postStatus(isCleanUp: boolean): Promise<void> {
   const context = github.context
   if (context.eventName !== 'workflow_run') {
@@ -81,9 +95,9 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     filter: 'latest',
     per_page: 100
   })
-  const job = jobs.data.jobs.find(j => j.name === context.job)
+  const job = jobs.data.jobs.find(j => j.name === jobName(context.job))
   if (!job) {
-    throw new Error(`job not found: ${context.job}`)
+    throw new Error(`job not found: ${jobName(context.job)}`)
   }
   const state =
     context.payload.action === 'requested' && requestedAsPending()
@@ -94,7 +108,7 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
     state,
-    context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event} => ${context.eventName})`,
+    context: `${context.workflow} / ${jobName(context.job)} (${context.payload.workflow_run.event} => ${context.eventName})`,
     target_url: job.html_url
   })
   core.debug(JSON.stringify(resp, null, 2))
