@@ -59,18 +59,19 @@ function job2status(
   return 'success'
 }
 
-function jobName(job: string) {
+function jobName(job: string): string {
   if (
     process.env.MATRIX_CONTEXT == null ||
     process.env.MATRIX_CONTEXT === 'null'
   )
-    return job;
-  const matrix = JSON.parse(process.env.MATRIX_CONTEXT);
-  const value = Object.values(matrix).join(', ');
-  const value2 = value !== '' ? `${job} (${value})` : job;
-  if (value2.length <= 100)
-    return value2;
-  return value2.substring(0, 97) + '...';
+    return job
+  const matrix = JSON.parse(process.env.MATRIX_CONTEXT)
+  const value = Object.values(matrix)
+    .filter(x => x !== '')
+    .join(', ')
+  const value2 = value !== '' ? `${job} (${value})` : job
+  if (value2.length <= 100) return value2
+  return `${value2.substring(0, 97)}...`
 }
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
@@ -108,7 +109,9 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
     state,
-    context: `${context.workflow} / ${jobName(context.job)} (${context.payload.workflow_run.event} => ${context.eventName})`,
+    context: `${context.workflow} / ${jobName(context.job)} (${
+      context.payload.workflow_run.event
+    } => ${context.eventName})`,
     target_url: job.html_url
   })
   core.debug(JSON.stringify(resp, null, 2))
