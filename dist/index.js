@@ -612,9 +612,9 @@ function postStatus(isCleanUp) {
             filter: 'latest',
             per_page: 100
         });
-        const job = jobs.data.jobs.find(j => j.name === context.job);
+        const job = jobs.data.jobs.find(j => j.run_id === context.runId);
         if (!job) {
-            throw new Error(`job not found: ${context.job}`);
+            throw new Error(`job not found: ${context.job}, run ID: ${context.runId}`);
         }
         const state = context.payload.action === 'requested' && requestedAsPending()
             ? 'pending'
