@@ -9,7 +9,9 @@ async function run(): Promise<void> {
   try {
     await postStatus(false)
   } catch (error) {
-    core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    }
   }
 }
 
@@ -17,7 +19,9 @@ async function cleanup(): Promise<void> {
   try {
     await postStatus(true)
   } catch (error) {
-    core.warning(error.message)
+    if (error instanceof Error) {
+      core.warning(error.message)
+    }
   }
 }
 
@@ -28,20 +32,22 @@ function job2status(
     node_id: string
     head_sha: string
     url: string
-    html_url: string
-    status: string
-    conclusion: string
+    html_url: string | null
+    status: 'completed' | 'queued' | 'in_progress'
+    conclusion: string | null
     started_at: string
-    completed_at: string
+    completed_at: string | null
     name: string
-    steps: {
-      name: string
-      status: string
-      conclusion: string
-      number: number
-      started_at: string
-      completed_at: string
-    }[]
+    steps?:
+      | {
+          status: 'completed' | 'queued' | 'in_progress'
+          conclusion: string | null
+          name: string
+          number: number
+          started_at?: string | null | undefined
+          completed_at?: string | null | undefined
+        }[]
+      | undefined
     check_run_url: string
   },
   isCleanUp: boolean
@@ -49,14 +55,38 @@ function job2status(
   if (!isCleanUp) {
     return 'pending'
   }
+  if (!job.steps) {
+    return 'success'
+  }
+  for (const value of job.steps) {
+    if (!value.conclusion) continue
+    core.info(value.conclusion)
+  }
   // Find step with failure instead of relying on job.conclusion because this
   // (post) action itself is one of a step of this job and job.conclusion is
   // always null while running this action.
-  const failedStep = job.steps.find(step => step.conclusion === 'failure')
+  const failedStep = job.steps.find(
+    step => step.conclusion === 'failure' || step.conclusion === 'cancelled'
+  )
   if (failedStep) {
     return 'failure'
   }
   return 'success'
+}
+
+function jobName(job: string): string {
+  if (
+    process.env.MATRIX_CONTEXT == null ||
+    process.env.MATRIX_CONTEXT === 'null'
+  )
+    return job
+  const matrix = JSON.parse(process.env.MATRIX_CONTEXT)
+  const value = Object.values(matrix)
+    .filter(x => x !== '')
+    .join(', ')
+  const value2 = value !== '' ? `${job} (${value})` : job
+  if (value2.length <= 100) return value2
+  return `${value2.substring(0, 97)}...`
 }
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
@@ -74,28 +104,30 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     )
     await wait(10 * 1000)
   }
-  const jobs = await octokit.actions.listJobsForWorkflowRun({
+  const jobs = await octokit.rest.actions.listJobsForWorkflowRun({
     owner: context.repo.owner,
     repo: context.repo.repo,
     run_id: context.runId,
     filter: 'latest',
     per_page: 100
   })
-  const job = jobs.data.jobs.find(j => j.name === context.job)
+  const job = jobs.data.jobs.find(j => j.name === jobName(context.job))
   if (!job) {
-    throw new Error(`job not found: ${context.job}`)
+    throw new Error(`job not found: ${jobName(context.job)}`)
   }
   const state =
     context.payload.action === 'requested' && requestedAsPending()
       ? 'pending'
       : job2status(job, isCleanUp)
-  const resp = await octokit.repos.createCommitStatus({
+  const resp = await octokit.rest.repos.createCommitStatus({
     owner: context.repo.owner,
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
     state,
-    context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event} => ${context.eventName})`,
-    target_url: job.html_url
+    context: `${context.workflow} / ${jobName(context.job)} (${
+      context.payload.workflow_run.event
+    } => ${context.eventName})`,
+    target_url: !job.html_url ? undefined : job.html_url
   })
   core.debug(JSON.stringify(resp, null, 2))
 }
