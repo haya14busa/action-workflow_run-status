@@ -71,10 +71,18 @@ function job2status(job, isCleanUp) {
     if (!isCleanUp) {
         return 'pending';
     }
+    if (!job.steps) {
+        return 'success';
+    }
+    for (const value of job.steps) {
+        if (!value.conclusion)
+            continue;
+        core.info(value.conclusion);
+    }
     // Find step with failure instead of relying on job.conclusion because this
     // (post) action itself is one of a step of this job and job.conclusion is
     // always null while running this action.
-    const failedStep = job.steps.find(step => step.conclusion === 'failure');
+    const failedStep = job.steps.find(step => step.conclusion === 'failure' || step.conclusion === 'cancelled');
     if (failedStep) {
         return 'failure';
     }
@@ -125,7 +133,7 @@ function postStatus(isCleanUp) {
             sha: context.payload.workflow_run.head_commit.id,
             state,
             context: `${context.workflow} / ${jobName(context.job)} (${context.payload.workflow_run.event} => ${context.eventName})`,
-            target_url: job.html_url
+            target_url: !job.html_url ? undefined : job.html_url
         });
         core.debug(JSON.stringify(resp, null, 2));
     });
