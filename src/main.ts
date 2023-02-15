@@ -65,7 +65,7 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     filter: 'latest',
     per_page: 100
   })
-  const job = jobs.data.jobs.find(j => j.name === context.job)
+  const job = jobs.data.jobs.find(j => j.run_id === context.runId)
   if (!job) {
     throw new Error(`job not found: ${context.job}`)
   }
@@ -78,7 +78,9 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
     state,
-    context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event} => ${context.eventName})`,
+    context: `${context.workflow} / ${context.job}${matrixName()} (${
+      context.payload.workflow_run.event
+    } => ${context.eventName})`,
     target_url: job.html_url ?? undefined
   })
   core.debug(JSON.stringify(resp, null, 2))
@@ -86,6 +88,14 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
 
 function requestedAsPending(): boolean {
   return core.getBooleanInput('requested_as_pending')
+}
+
+function matrixName(): string {
+  const name = core.getInput('matrix_name', {required: true})
+  if (name === '') {
+    return ''
+  }
+  return ` (${name})`
 }
 
 // Main

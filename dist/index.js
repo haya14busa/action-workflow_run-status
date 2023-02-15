@@ -1230,7 +1230,7 @@ function postStatus(isCleanUp) {
             filter: 'latest',
             per_page: 100
         });
-        const job = jobs.data.jobs.find(j => j.name === context.job);
+        const job = jobs.data.jobs.find(j => j.run_id === context.runId);
         if (!job) {
             throw new Error(`job not found: ${context.job}`);
         }
@@ -1242,7 +1242,7 @@ function postStatus(isCleanUp) {
             repo: context.repo.repo,
             sha: context.payload.workflow_run.head_commit.id,
             state,
-            context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event} => ${context.eventName})`,
+            context: `${context.workflow} / ${context.job}${matrixName()} (${context.payload.workflow_run.event} => ${context.eventName})`,
             target_url: (_a = job.html_url) !== null && _a !== void 0 ? _a : undefined
         });
         core.debug(JSON.stringify(resp, null, 2));
@@ -1250,6 +1250,13 @@ function postStatus(isCleanUp) {
 }
 function requestedAsPending() {
     return core.getBooleanInput('requested_as_pending');
+}
+function matrixName() {
+    const name = core.getInput('matrix_name', { required: true });
+    if (name === '') {
+        return '';
+    }
+    return ` (${name})`;
 }
 // Main
 if (!stateHelper.IsPost) {
