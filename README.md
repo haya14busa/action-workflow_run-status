@@ -29,13 +29,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: haya14busa/action-workflow_run-status@v1
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: exit 0
 
   post-test-failure:
     runs-on: ubuntu-latest
     steps:
       - uses: haya14busa/action-workflow_run-status@v1
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: exit 1
+```
+
+if your jobs using matrix you can send it's name for display like:
+
+```yaml
+name: 'test_post'
+on:
+  workflow_run:
+    workflows: ["test"]
+    types:
+      - completed
+jobs:
+  build:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node_group:
+          - "1"
+          - "2"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+        matrix_name: ${{ matrix.node_group }}
+      - run: exit 0
 ```
