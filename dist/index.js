@@ -934,7 +934,7 @@ function job2status(job, isCleanUp) {
     if (failedStep) {
         return 'failure';
     }
-    return 'success';
+    return job.conclusion === 'success' ? 'success' : 'error';
 }
 function postStatus(isCleanUp) {
     var _a;

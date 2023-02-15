@@ -4,7 +4,7 @@ import * as stateHelper from './state-helper'
 import type {components} from '@octokit/openapi-types'
 import {wait} from './wait'
 
-type Status = 'failure' | 'pending' | 'success'
+type Status = 'failure' | 'pending' | 'success' | 'error'
 
 async function run(): Promise<void> {
   try {
@@ -40,7 +40,7 @@ function job2status(
   if (failedStep) {
     return 'failure'
   }
-  return 'success'
+  return job.conclusion === 'success' ? 'success' : 'error'
 }
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
