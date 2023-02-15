@@ -85,9 +85,7 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
 }
 
 function requestedAsPending(): boolean {
-  return (
-    (core.getInput('requested_as_pending') || 'false').toUpperCase() === 'TRUE'
-  )
+  return core.getBooleanInput('requested_as_pending')
 }
 
 // Main
