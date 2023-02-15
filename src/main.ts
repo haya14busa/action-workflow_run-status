@@ -91,7 +91,7 @@ function requestedAsPending(): boolean {
 }
 
 function matrixName(): string {
-  const name = core.getInput('matrix_name', {required: true})
+  const name = core.getInput('matrix_name')
   if (name === '') {
     return ''
   }

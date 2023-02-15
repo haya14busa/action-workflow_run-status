@@ -1252,7 +1252,7 @@ function requestedAsPending() {
     return core.getBooleanInput('requested_as_pending');
 }
 function matrixName() {
-    const name = core.getInput('matrix_name', { required: true });
+    const name = core.getInput('matrix_name');
     if (name === '') {
         return '';
     }
