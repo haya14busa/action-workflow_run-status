@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import * as stateHelper from './state-helper'
+import type {components} from '@octokit/openapi-types'
 import {wait} from './wait'
 
 type Status = 'failure' | 'pending' | 'success'
@@ -9,7 +10,9 @@ async function run(): Promise<void> {
   try {
     await postStatus(false)
   } catch (error) {
-    core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    }
   }
 }
 
@@ -17,33 +20,14 @@ async function cleanup(): Promise<void> {
   try {
     await postStatus(true)
   } catch (error) {
-    core.warning(error.message)
+    if (error instanceof Error) {
+      core.warning(error.message)
+    }
   }
 }
 
 function job2status(
-  job: {
-    id: number
-    run_id: number
-    node_id: string
-    head_sha: string
-    url: string
-    html_url: string
-    status: string
-    conclusion: string
-    started_at: string
-    completed_at: string
-    name: string
-    steps: {
-      name: string
-      status: string
-      conclusion: string
-      number: number
-      started_at: string
-      completed_at: string
-    }[]
-    check_run_url: string
-  },
+  job: components['schemas']['job'],
   isCleanUp: boolean
 ): Status {
   if (!isCleanUp) {
@@ -52,7 +36,7 @@ function job2status(
   // Find step with failure instead of relying on job.conclusion because this
   // (post) action itself is one of a step of this job and job.conclusion is
   // always null while running this action.
-  const failedStep = job.steps.find(step => step.conclusion === 'failure')
+  const failedStep = job.steps?.find(step => step.conclusion === 'failure')
   if (failedStep) {
     return 'failure'
   }
@@ -74,7 +58,7 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     )
     await wait(10 * 1000)
   }
-  const jobs = await octokit.actions.listJobsForWorkflowRun({
+  const jobs = await octokit.rest.actions.listJobsForWorkflowRun({
     owner: context.repo.owner,
     repo: context.repo.repo,
     run_id: context.runId,
@@ -89,13 +73,13 @@ async function postStatus(isCleanUp: boolean): Promise<void> {
     context.payload.action === 'requested' && requestedAsPending()
       ? 'pending'
       : job2status(job, isCleanUp)
-  const resp = await octokit.repos.createCommitStatus({
+  const resp = await octokit.rest.repos.createCommitStatus({
     owner: context.repo.owner,
     repo: context.repo.repo,
     sha: context.payload.workflow_run.head_commit.id,
     state,
     context: `${context.workflow} / ${context.job} (${context.payload.workflow_run.event} => ${context.eventName})`,
-    target_url: job.html_url
+    target_url: job.html_url ?? undefined
   })
   core.debug(JSON.stringify(resp, null, 2))
 }
