@@ -9,10 +9,11 @@ on:
 jobs:
   post-test-matrix-success:
     runs-on: ubuntu-latest
-    matrix:
-      node_group:
-        - "1"
-        - "2"
+    strategy:
+      matrix:
+        node_group:
+          - "1"
+          - "2"
     steps:
       - uses: actions/checkout@v3
       - uses: ./
@@ -22,6 +23,11 @@ jobs:
 
   post-test-matrix-failure:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node_group:
+          - "1"
+          - "2"
     steps:
       - uses: actions/checkout@v3
       - uses: ./
