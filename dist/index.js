@@ -1048,15 +1048,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IsPost = void 0;
-const coreCommand = __importStar(__webpack_require__(431));
+const core = __importStar(__webpack_require__(470));
 /**
  * Indicates whether the POST action is running
  */
-exports.IsPost = !!process.env['STATE_isPost'];
+exports.IsPost = core.getState('isPost');
 // Publish a variable so that when the POST action runs, it can determine it should run the cleanup logic.
 // This is necessary since we don't have a separate entry point.
 if (!exports.IsPost) {
-    coreCommand.issueCommand('save-state', { name: 'isPost' }, 'true');
+    core.saveState('isPost', true);
 }
 
 
