@@ -1197,7 +1197,7 @@ function cleanup() {
     });
 }
 function job2status(job, isCleanUp) {
-    var _a;
+    var _a, _b;
     if (!isCleanUp) {
         return 'pending';
     }
@@ -1208,7 +1208,11 @@ function job2status(job, isCleanUp) {
     if (failedStep) {
         return 'failure';
     }
-    return job.conclusion === 'success' ? 'success' : 'error';
+    const cancelledStep = (_b = job.steps) === null || _b === void 0 ? void 0 : _b.find(step => step.conclusion === 'cancelled');
+    if (cancelledStep) {
+        return 'error';
+    }
+    return 'success';
 }
 function postStatus(isCleanUp) {
     var _a;

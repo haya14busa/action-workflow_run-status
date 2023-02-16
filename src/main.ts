@@ -40,7 +40,13 @@ function job2status(
   if (failedStep) {
     return 'failure'
   }
-  return job.conclusion === 'success' ? 'success' : 'error'
+
+  const cancelledStep = job.steps?.find(step => step.conclusion === 'cancelled')
+  if (cancelledStep) {
+    return 'error'
+  }
+
+  return 'success'
 }
 
 async function postStatus(isCleanUp: boolean): Promise<void> {
