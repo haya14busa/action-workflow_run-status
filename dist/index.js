@@ -1234,7 +1234,7 @@ function postStatus(isCleanUp) {
             filter: 'latest',
             per_page: 100
         });
-        const job = jobs.data.jobs.find(j => j.run_id === context.runId);
+        const job = jobs.data.jobs.find(j => j.name === `${context.job}${matrixName()}`);
         if (!job) {
             throw new Error(`job not found: ${context.job}`);
         }
