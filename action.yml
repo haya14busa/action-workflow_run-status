@@ -8,7 +8,13 @@ inputs:
   requested_as_pending:
     description: 'handle requested action type as pending'
     default: true
+    required: false
+  matrix_name:
+    description: 'current matrix name'
+    default: ''
+    required: false
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
   post: 'dist/index.js'
+  post-if: 'always()'
